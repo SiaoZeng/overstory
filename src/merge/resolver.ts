@@ -51,6 +51,23 @@ async function runGit(
 }
 
 /**
+ * os-eco runtime state path prefixes and exact filenames.
+ * Files matching these are bookkeeping artifacts that change during normal
+ * orchestration and should be auto-committed rather than blocking merges.
+ */
+const OS_ECO_STATE_PREFIXES = [".seeds/", ".overstory/", ".greenhouse/", ".mulch/", ".canopy/"];
+const OS_ECO_STATE_FILES = ["CLAUDE.md"];
+
+/**
+ * Returns true if a file path is an os-eco runtime state file
+ * (issue tracker, groups, expertise, prompts, etc.).
+ */
+function isOsEcoStateFile(filePath: string): boolean {
+	if (OS_ECO_STATE_FILES.includes(filePath)) return true;
+	return OS_ECO_STATE_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+}
+
+/**
  * Get the list of tracked files with uncommitted changes (unstaged or staged).
  * Returns deduplicated list of file paths. An empty list means the working tree is clean.
  */
@@ -68,6 +85,24 @@ async function checkDirtyWorkingTree(repoRoot: string): Promise<string[]> {
 			.filter((l) => l.length > 0),
 	];
 	return [...new Set(files)];
+}
+
+/**
+ * Auto-commit os-eco runtime state files so they don't block merges.
+ * Returns true if a commit was made, false if there was nothing to commit.
+ */
+async function autoCommitStateFiles(repoRoot: string, stateFiles: string[]): Promise<boolean> {
+	if (stateFiles.length === 0) return false;
+
+	const { exitCode: addCode } = await runGit(repoRoot, ["add", ...stateFiles]);
+	if (addCode !== 0) return false;
+
+	const { exitCode: commitCode } = await runGit(repoRoot, [
+		"commit",
+		"-m",
+		"chore: sync os-eco runtime state",
+	]);
+	return commitCode === 0;
 }
 
 /**
@@ -618,10 +653,20 @@ export function createMergeResolver(options: {
 			// causing all tiers to cascade with empty conflict lists and a misleading final error.
 			const dirtyFiles = await checkDirtyWorkingTree(repoRoot);
 			if (dirtyFiles.length > 0) {
-				throw new MergeError(
-					`Working tree has uncommitted changes to tracked files: ${dirtyFiles.join(", ")}. Commit or stash changes before running ov merge.`,
-					{ branchName: entry.branchName },
-				);
+				const stateFiles = dirtyFiles.filter(isOsEcoStateFile);
+				const otherFiles = dirtyFiles.filter((f) => !isOsEcoStateFile(f));
+
+				// Auto-commit os-eco runtime state files so they don't block merges
+				if (stateFiles.length > 0) {
+					await autoCommitStateFiles(repoRoot, stateFiles);
+				}
+
+				if (otherFiles.length > 0) {
+					throw new MergeError(
+						`Working tree has uncommitted changes to tracked files: ${otherFiles.join(", ")}. Commit or stash changes before running ov merge.`,
+						{ branchName: entry.branchName },
+					);
+				}
 			}
 
 			let lastTier: ResolutionTier = "clean-merge";
