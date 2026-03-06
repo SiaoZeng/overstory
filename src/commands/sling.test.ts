@@ -1017,6 +1017,27 @@ describe("sling provider env injection building blocks", () => {
 		expect(combined.OVERSTORY_WORKTREE_PATH).toBe("/tmp/wt");
 	});
 
+	test("env dict from resolveModel can be spread with OVERSTORY_TASK_ID", () => {
+		const config = makeConfig(
+			{ builder: "openrouter/anthropic/claude-3-5-sonnet" },
+			{ openrouter: { type: "gateway", baseUrl: "https://openrouter.ai/api/v1" } },
+		);
+		const manifest = makeManifest();
+
+		const { env } = resolveModel(config, manifest, "builder", "sonnet");
+		// Simulates the spread in slingCommand: { ...env, OVERSTORY_AGENT_NAME: name, OVERSTORY_WORKTREE_PATH: wt, OVERSTORY_TASK_ID: taskId }
+		const combined: Record<string, string> = {
+			...(env ?? {}),
+			OVERSTORY_AGENT_NAME: "test-builder",
+			OVERSTORY_WORKTREE_PATH: "/tmp/wt",
+			OVERSTORY_TASK_ID: "overstory-1234",
+		};
+
+		expect(combined.OVERSTORY_AGENT_NAME).toBe("test-builder");
+		expect(combined.OVERSTORY_WORKTREE_PATH).toBe("/tmp/wt");
+		expect(combined.OVERSTORY_TASK_ID).toBe("overstory-1234");
+	});
+
 	test("resolveModel returns no env for native anthropic provider", () => {
 		const config = makeConfig({ builder: "sonnet" }, { anthropic: { type: "native" } });
 		const manifest = makeManifest();

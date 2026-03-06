@@ -882,6 +882,7 @@ export async function slingCommand(taskId: string, opts: SlingOptions): Promise<
 					...runtime.buildEnv(resolvedModel),
 					OVERSTORY_AGENT_NAME: name,
 					OVERSTORY_WORKTREE_PATH: worktreePath,
+					OVERSTORY_TASK_ID: taskId,
 				};
 				const argv = runtime.buildDirectSpawn({
 					cwd: worktreePath,
@@ -972,12 +973,14 @@ export async function slingCommand(taskId: string, opts: SlingOptions): Promise<
 						...runtime.buildEnv(resolvedModel),
 						OVERSTORY_AGENT_NAME: name,
 						OVERSTORY_WORKTREE_PATH: worktreePath,
+						OVERSTORY_TASK_ID: taskId,
 					},
 				});
 				const pid = await createSession(tmuxSessionName, worktreePath, spawnCmd, {
 					...runtime.buildEnv(resolvedModel),
 					OVERSTORY_AGENT_NAME: name,
 					OVERSTORY_WORKTREE_PATH: worktreePath,
+					OVERSTORY_TASK_ID: taskId,
 				});
 
 				// 13. Record session BEFORE sending the beacon so that hook-triggered
