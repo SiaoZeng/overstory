@@ -149,6 +149,9 @@ export interface AgentRuntime {
 	/** Unique runtime identifier (e.g. "claude", "codex", "pi"). */
 	id: string;
 
+	/** Stability level of this runtime adapter. */
+	readonly stability: "stable" | "beta" | "experimental";
+
 	/** Relative path to the instruction file within a worktree (e.g. ".claude/CLAUDE.md"). */
 	readonly instructionPath: string;
 

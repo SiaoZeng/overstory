@@ -37,6 +37,9 @@ export class CodexRuntime implements AgentRuntime {
 	/** Unique identifier for this runtime. */
 	readonly id = "codex";
 
+	/** Stability level. Codex adapter is experimental — not fully validated. */
+	readonly stability = "experimental" as const;
+
 	/** Relative path to the instruction file within a worktree. */
 	readonly instructionPath = "AGENTS.md";
 

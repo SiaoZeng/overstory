@@ -31,6 +31,9 @@ export class ClaudeRuntime implements AgentRuntime {
 	/** Unique identifier for this runtime. */
 	readonly id = "claude";
 
+	/** Stability level. Claude Code is the primary runtime. */
+	readonly stability = "stable" as const;
+
 	/** Relative path to the instruction file within a worktree. */
 	readonly instructionPath = ".claude/CLAUDE.md";
 
