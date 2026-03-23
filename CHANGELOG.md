@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-03-23
+
+### Added
+
+#### Aider, Goose, and Amp Runtime Adapters
+- **`src/runtimes/aider.ts`** — new experimental runtime adapter for [Aider](https://aider.chat) (`aider` CLI), Paul Gauthier's AI pair programming tool — interactive REPL with `--yes-always`, writes overlay to `CONVENTIONS.md`, no hook system — thanks to **@arosstale** (#80)
+- **`src/runtimes/goose.ts`** — new experimental runtime adapter for [Goose](https://github.com/block/goose) (`goose` CLI), Block's AI developer agent — interactive REPL with profile-based permissions, writes overlay to `.goosehints` — thanks to **@arosstale** (#80)
+- **`src/runtimes/amp.ts`** — new experimental runtime adapter for [Amp](https://amp.dev) (`amp` CLI), Sourcegraph's AI coding agent — interactive chat with built-in approval system, writes overlay to `.amp/AGENT.md` — thanks to **@arosstale** (#80)
+- Runtime count: 8 → 11 adapters
+
+#### Orchestrator Command Surface
+- **`ov orchestrator`** — new top-level command for ecosystem-level multi-repo orchestration; shares the same start/stop/status/send/ask/output subcommands as `ov coordinator` via a reusable `PersistentAgentSpec` abstraction (#126)
+- **`src/commands/orchestrator.ts`** — defines `ORCHESTRATOR_SPEC` and routes through shared persistent agent machinery
+- **Refactored `coordinator.ts`** — extracted `PersistentAgentSpec` interface and `startPersistentAgent()` / `stopPersistentAgent()` / `statusPersistentAgent()` helpers for code reuse between coordinator and orchestrator
+
+#### Role Compression for Low-Budget Agents
+- **Budget compression rules in `agents/lead.md`** — leads now compress roles when `MAX_AGENTS` is constrained: `=1` means act as combined lead/worker, `=2` means one helper at a time then finish yourself (#127)
+- **`agents/coordinator.md` updated** — coordinators may now spawn scouts/builders directly for low-budget or narrow work instead of always going through leads
+- **`src/agents/overlay.ts` enhanced** — `formatDispatchOverrides()` generates compression-aware messaging for `MAX_AGENTS = 1` and `MAX_AGENTS = 2`
+
+#### Watchdog Enhancements
+- **`TriageResult` type** in `src/watchdog/triage.ts` — replaces bare strings with structured `{ verdict, fallback, reason }` for better triage observability
+- **New watchdog config options** — `rpcTimeoutMs` (default 5000), `triageTimeoutMs` (default 30000), `maxEscalationLevel` (default 3) with validation ranges
+- **`ov doctor --category watchdog`** — new doctor check category validating PID file integrity, process liveness, tier availability
+
+#### Utilities Module
+- **`src/utils/bin.ts`** — `resolveOverstoryBin()` for re-launch scenarios
+- **`src/utils/fs.ts`** — SQLite wipe, JSON reset, directory clear, file delete helpers
+- **`src/utils/pid.ts`** — PID file read/write/remove
+- **`src/utils/time.ts`** — parse relative time formats (`1h`, `30m`, `2d`, `10s`)
+- **`src/utils/version.ts`** — version detection (current, npm registry, CLI tools)
+
+#### Pi Runtime
+- **AGENTS.md overlay support** — Pi runtime now writes overlays to `AGENTS.md` in addition to guard extensions (#122)
+
+### Fixed
+
+- **Doctor false positives** — reduced spurious failures across multiple check categories (#125)
+- **Dashboard alternate screen buffer** — `ov dashboard` now uses the alternate screen buffer, preventing TUI artifacts from polluting the terminal after exit — thanks to **@mustafamagdy** (#111)
+- **Network-dependent provider tests** — replaced external HTTP calls with local HTTP servers for CI reliability — thanks to **@0xLeathery** (#110)
+- **Event tailer graceful degradation** — `startEventTailer()` returns a no-op handle when EventStore creation fails instead of crashing
+- **Tailer registry cleanup** — watchdog daemon now properly cleans up the event tailer registry on `stop()` to prevent resource leaks
+- **Canopy client test resilience** — tests skip gracefully when `cn` CLI is unavailable
+
+### Changed
+
+- CLI command count: 36 → 37 (new `ov orchestrator` command)
+- Doctor check categories: 11 → 12 (new `watchdog` category)
+- Runtime adapter count: 8 → 11 (new `aider`, `goose`, `amp`)
+
+### Testing
+
+- 3654 tests across 112 files (8566 `expect()` calls)
+- New runtime adapter tests: `aider.test.ts`, `goose.test.ts`, `amp.test.ts`
+- New utility tests: `bin.test.ts`, `fs.test.ts`, `pid.test.ts`, `time.test.ts`, `version.test.ts`
+- New doctor category test: `watchdog.test.ts`
+- Expanded coverage: `coordinator.test.ts`, `errors.test.ts`, `logs.test.ts`, `prime.test.ts`, `feed.test.ts`, `group.test.ts`, `config.test.ts`, `mail/store.test.ts`, `watchdog/daemon.test.ts`
+- Test coverage uplift by exporting private helpers and adding targeted tests — thanks to **@0xLeathery** (#109)
+
 ## [0.9.1] - 2026-03-12
 
 ### Changed
@@ -1605,7 +1664,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Biome configuration for formatting and linting
 - TypeScript strict mode with `noUncheckedIndexedAccess`
 
-[Unreleased]: https://github.com/jayminwest/overstory/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/jayminwest/overstory/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/jayminwest/overstory/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/jayminwest/overstory/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/jayminwest/overstory/compare/v0.8.7...v0.9.0
 [0.8.7]: https://github.com/jayminwest/overstory/compare/v0.8.6...v0.8.7
