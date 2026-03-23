@@ -46,6 +46,7 @@ import type {
 	MailMessage,
 	OverstoryConfig,
 	StoredEvent,
+	TaskTrackerBackend,
 } from "../types.ts";
 import { evaluateHealth } from "../watchdog/health.ts";
 import { isProcessAlive } from "../worktree/tmux.ts";
@@ -356,6 +357,7 @@ async function loadDashboardData(
 	thresholds?: { staleMs: number; zombieMs: number },
 	eventBuffer?: EventBuffer,
 	runtimeConfig?: OverstoryConfig["runtime"],
+	taskTrackerBackend?: TaskTrackerBackend,
 ): Promise<DashboardData> {
 	// Get all sessions from the pre-opened session store — fall back to cache on SQLite errors.
 	let allSessions: AgentSession[];
@@ -516,7 +518,7 @@ async function loadDashboardData(
 	const now2 = Date.now();
 	if (!trackerCache || now2 - trackerCache.fetchedAt > TRACKER_CACHE_TTL_MS) {
 		try {
-			const backend = await resolveBackend("auto", root);
+			const backend = await resolveBackend(taskTrackerBackend ?? "auto", root);
 			const tracker = createTrackerClient(backend, root);
 			tasks = await tracker.list({ limit: 10 });
 			trackerCache = { tasks, fetchedAt: now2 };
@@ -1104,6 +1106,7 @@ async function executeDashboard(opts: DashboardOpts): Promise<void> {
 				thresholds,
 				eventBuffer,
 				config.runtime,
+				config.taskTracker.backend,
 			);
 			lastGoodData = data;
 			// If recovering from an error, clear the stale error line at the bottom
